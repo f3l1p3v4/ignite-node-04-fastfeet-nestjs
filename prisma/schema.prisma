@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  DELIVERYMAN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  cpf       String   @unique
+  password  String
+  latitude  Decimal
+  longitude Decimal
+  role      UserRole
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Recipient {
+  id         String  @id @default(uuid())
+  name       String
+  email      String  @unique
+  latitude   Decimal
+  longitude  Decimal
+  zipCode    String
+  address    String
+  complement String?
+  district   String
+  city       String
+  state      String
+
+  orders        Order[]
+  notifications Notification[]
+
+  @@map("recipients")
+}
+
+enum OrderStatus {
+  WAITING
+  COLLECTED
+  DELIVERED
+  RETURNED
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  status      OrderStatus @default(WAITING)
+  collectedAt DateTime?
+  deliveredAt DateTime?
+  returnedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  recipient   Recipient @relation(fields: [recipientId], references: [id])
+  recipientId String
+
+  deliveryman   User?   @relation(fields: [deliverymanId], references: [id])
+  deliverymanId String?
+
+  attachments Attachment[]
+
+  @@map("orders")
+}
+
+model Attachment {
+  id    String @id @default(uuid())
+  title String
+  url   String
+
+  order   Order?  @relation(fields: [orderId], references: [id])
+  orderId String?
+
+  @@map("attachments")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  recipient   Recipient @relation(fields: [recipientId], references: [id])
+  recipientId String
+
+  @@map("notifications")
+}
